@@ -1,6 +1,7 @@
 importScripts('lib/sponsorblock.js', 'lib/settings.js');
 
 const segmentCache = new Map();
+const pendingRequests = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 50;
 
@@ -34,7 +35,18 @@ async function getSegments(videoID, requestedCategories) {
   if (cached && Date.now() - cached.savedAt < CACHE_TTL_MS) {
     return cached.segments;
   }
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey);
+  }
 
+  const request = fetchSegments(videoID, categories, cacheKey).finally(() => {
+    if (pendingRequests.get(cacheKey) === request) pendingRequests.delete(cacheKey);
+  });
+  if (pendingRequests.size < MAX_CACHE_ENTRIES) pendingRequests.set(cacheKey, request);
+  return request;
+}
+
+async function fetchSegments(videoID, categories, cacheKey) {
   const prefix = await SponsorBlockClient.sha256Prefix(videoID);
   const url = SponsorBlockClient.buildSkipSegmentsUrl(prefix, categories);
   const controller = new AbortController();
