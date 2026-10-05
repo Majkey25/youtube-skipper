@@ -13,6 +13,7 @@ const files = [
   'content.js',
   'content.css',
   'NOTICE.md',
+  'PRIVACY.md',
   'LICENSE'
 ];
 

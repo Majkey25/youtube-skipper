@@ -64,7 +64,7 @@ The extension does not request access to every website.
 
 The worker hashes the YouTube video ID and sends only the first four SHA-256 characters in the SponsorBlock request path. It then selects the exact video from the returned prefix group. Segment responses are cached in memory for ten minutes, with a maximum of 50 entries.
 
-No browsing history, analytics, or telemetry is collected.
+The developer receives no browsing history, analytics, or telemetry. SponsorBlock and its network providers receive your IP address, hash prefix, categories, and normal connection information. The hash prefix reduces video disclosure; it does not make requests anonymous. Turn off skipping to stop new lookups. See [privacy, data deletion, and terms of use](PRIVACY.md).
 
 ## Development
 

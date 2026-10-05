@@ -20,6 +20,9 @@ on:
       - assets/**
       - README.md
       - RELEASE_NOTES.md
+      - PRIVACY.md
+      - NOTICE.md
+      - LICENSE
       - .github/workflows/release.yml
   workflow_dispatch:
 

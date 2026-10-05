@@ -43,6 +43,7 @@ async function getSegments(videoID, requestedCategories) {
   try {
     const response = await fetch(url, {
       headers: { Accept: 'application/json' },
+      credentials: 'omit',
       signal: controller.signal,
       cache: 'no-store'
     });
