@@ -13,14 +13,14 @@ function readText(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
-test('package and manifest identify YouTube Skipper v2.0.2', () => {
+test('package and manifest identify YouTube Skipper v2.0.3', () => {
   const packageJson = readJson('package.json');
   const manifest = readJson('manifest.json');
 
   assert.equal(packageJson.name, 'youtube-skipper');
-  assert.equal(packageJson.version, '2.0.2');
+  assert.equal(packageJson.version, '2.0.3');
   assert.equal(manifest.name, 'YouTube Skipper');
-  assert.equal(manifest.version, '2.0.2');
+  assert.equal(manifest.version, '2.0.3');
   assert.equal(packageJson.license, 'MIT');
   assert.deepEqual(Object.keys(packageJson.devDependencies), ['archiver']);
 });

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "YouTube Skipper",
   "short_name": "YT Skipper",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Automatically skip sponsors and other community-reported YouTube segments.",
   "minimum_chrome_version": "121",
   "permissions": [

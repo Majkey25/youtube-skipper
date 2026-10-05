@@ -1,10 +1,10 @@
-# YouTube Skipper v2.0.2
+# YouTube Skipper v2.0.3
 
 ## Changed
 
-- Explain SponsorBlock's receipt of the video hash prefix and IP address in the popup and privacy notice.
-- Explicitly omit credentials from SponsorBlock requests.
-- Include privacy, data-deletion, support, and free-use information in releases.
+- Share an in-flight SponsorBlock lookup when requests use the same video and category key.
+- Bound pending reuse to 50 entries and clear it after success, failure, or the existing request timeout.
+- Ten matched fixed-delay lab runs reduced ten simultaneous duplicate requests to one. Median completion remained 92.4 ms; this saves requests rather than claiming faster server responses.
 
 ## Install
 
