@@ -1,6 +1,6 @@
 {
   "name": "youtube-skipper",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": true,
   "description": "Automatically skip sponsors and other community-reported YouTube segments.",
   "license": "MIT",
