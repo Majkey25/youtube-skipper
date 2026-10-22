@@ -5,6 +5,15 @@ const SegmentUtils = require('../lib/segment-utils.js');
 const Settings = require('../lib/settings.js');
 const SponsorBlock = require('../lib/sponsorblock.js');
 
+test('SponsorBlock rejects excessive candidate and matching segment counts', () => {
+  assert.throws(() => SponsorBlock.pickVideoSegments(Array(4097).fill(null), 'target'), /Too many SponsorBlock videos/);
+  const payload = [{ videoID: 'target', segments: Array(512).fill({ segment: [1, 2] }) }];
+  assert.equal(SponsorBlock.pickVideoSegments(payload, 'target').length, 512);
+  payload[0].segments.push({ segment: [2, 3] });
+  assert.throws(() => SponsorBlock.pickVideoSegments(payload, 'target'), /Too many SponsorBlock segments/);
+  assert.deepEqual(SponsorBlock.pickVideoSegments(payload, 'other'), []);
+});
+
 test('extractVideoId accepts watch and Shorts URLs', () => {
   assert.equal(
     SegmentUtils.extractVideoId('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=5'),
