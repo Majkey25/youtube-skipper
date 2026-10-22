@@ -13,7 +13,7 @@ function worker() {
   let listener;
   const root = path.resolve(__dirname, '..');
   const context = vm.createContext({
-    URL, TextEncoder, Uint8Array, AbortController, DOMException, Response,
+    URL, TextEncoder, TextDecoder, Uint8Array, AbortController, DOMException, Response,
     crypto: webcrypto,
     Date: class extends Date { static now() { return clock; } },
     chrome: { runtime: { onMessage: { addListener(value) { listener = value; } } } },
@@ -109,13 +109,15 @@ test('the eight-second abort clears pending work without caching a failure', asy
   assert.equal(fixture.timers.size, 0);
 });
 
-test('pending reuse and completed response storage remain bounded at fifty entries', async () => {
+test('pending fetches and completed response storage remain bounded at fifty entries', async () => {
   const fixture = worker();
   const pending = Promise.all(Array.from({ length: 52 }, (_, index) => fixture.call(`fixture${String(index).padStart(5, '0')}`)));
-  await fixture.waitForRequests(52);
+  await fixture.waitForRequests(50);
   assert.equal(fixture.count('pendingRequests.size'), 50);
   for (const request of fixture.requests) request.resolve(response());
-  assert.ok((await pending).every(reply => reply.ok));
+  const replies = await pending;
+  assert.equal(replies.filter(reply => reply.ok).length, 50);
+  assert.equal(replies.filter(reply => /Too many pending/.test(reply.error)).length, 2);
   assert.equal(fixture.count('pendingRequests.size'), 0);
   assert.equal(fixture.count('segmentCache.size'), 50);
   assert.equal(fixture.timers.size, 0);
@@ -134,4 +136,40 @@ test('cached 404 remains empty until the existing ten-minute TTL expires', async
   await fixture.waitForRequests(2);
   fixture.requests[1].resolve(response());
   assert.equal((await expired).segments[0].UUID, 'fixture-segment');
+});
+
+test('oversized streamed responses cancel before parsing and never enter the cache', async () => {
+  const fixture = worker();
+  let cancelled = false;
+  const pending = fixture.call();
+  await fixture.waitForRequests(1);
+  fixture.requests[0].resolve(new Response(new ReadableStream({
+    pull(controller) { controller.enqueue(new Uint8Array(64 * 1024)); },
+    cancel() { cancelled = true; }
+  })));
+  const reply = await pending;
+  assert.equal(reply.ok, false);
+  assert.match(reply.error, /too large/);
+  assert.equal(cancelled, true);
+  assert.equal(fixture.count('segmentCache.size'), 0);
+  assert.equal(fixture.count('pendingRequests.size'), 0);
+  assert.equal(fixture.timers.size, 0);
+});
+
+test('streamed UTF-8 and exact byte-limit responses still parse normally', async () => {
+  const fixture = worker();
+  const pending = fixture.call();
+  await fixture.waitForRequests(1);
+  const json = JSON.stringify([{ videoID: 'fixtureVid01', segments: [{ UUID: 'český' }] }]);
+  const bytes = new TextEncoder().encode(json);
+  fixture.requests[0].resolve(new Response(new ReadableStream({
+    start(controller) {
+      for (const byte of bytes) controller.enqueue(Uint8Array.of(byte));
+      controller.enqueue(new TextEncoder().encode(' '.repeat(1024 * 1024 - bytes.length)));
+      controller.close();
+    }
+  })));
+  const reply = await pending;
+  assert.equal(reply.ok, true, reply.error);
+  assert.equal(reply.segments[0].UUID, 'český');
 });

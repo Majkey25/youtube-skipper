@@ -4,6 +4,7 @@ const segmentCache = new Map();
 const pendingRequests = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 50;
+const MAX_RESPONSE_BYTES = 1024 * 1024;
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type !== 'GET_SEGMENTS') {
@@ -38,11 +39,14 @@ async function getSegments(videoID, requestedCategories) {
   if (pendingRequests.has(cacheKey)) {
     return pendingRequests.get(cacheKey);
   }
+  if (pendingRequests.size >= MAX_CACHE_ENTRIES) {
+    throw new Error('Too many pending SponsorBlock requests');
+  }
 
   const request = fetchSegments(videoID, categories, cacheKey).finally(() => {
     if (pendingRequests.get(cacheKey) === request) pendingRequests.delete(cacheKey);
   });
-  if (pendingRequests.size < MAX_CACHE_ENTRIES) pendingRequests.set(cacheKey, request);
+  pendingRequests.set(cacheKey, request);
   return request;
 }
 
@@ -68,7 +72,26 @@ async function fetchSegments(videoID, categories, cacheKey) {
       throw new Error(`SponsorBlock API returned HTTP ${response.status}`);
     }
 
-    const segments = SponsorBlockClient.pickVideoSegments(await response.json(), videoID);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let text = '';
+    let bytes = 0;
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        bytes += value.byteLength;
+        if (bytes > MAX_RESPONSE_BYTES) {
+          await reader.cancel();
+          throw new RangeError('SponsorBlock response is too large');
+        }
+        text += decoder.decode(value, { stream: true });
+      }
+      text += decoder.decode();
+    } finally {
+      reader.releaseLock();
+    }
+    const segments = SponsorBlockClient.pickVideoSegments(JSON.parse(text), videoID);
     saveCache(cacheKey, segments);
     return segments;
   } catch (error) {
@@ -77,6 +100,7 @@ async function fetchSegments(videoID, categories, cacheKey) {
     }
     throw error;
   } finally {
+    controller.abort();
     clearTimeout(timeout);
   }
 }

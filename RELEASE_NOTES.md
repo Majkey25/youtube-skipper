@@ -1,10 +1,10 @@
-# YouTube Skipper v2.0.3
+# YouTube Skipper v2.0.4
 
 ## Changed
 
-- Share an in-flight SponsorBlock lookup when requests use the same video and category key.
-- Bound pending reuse to 50 entries and clear it after success, failure, or the existing request timeout.
-- Ten matched fixed-delay lab runs reduced ten simultaneous duplicate requests to one. Median completion remained 92.4 ms; this saves requests rather than claiming faster server responses.
+- Limit SponsorBlock responses to 1 MiB, 4,096 candidate videos, and 512 matching segments.
+- Cap concurrent lookups at 50 and cancel oversized responses before parsing or caching them.
+- Pin release actions to reviewed commits and update the vulnerable brace-expansion build dependency.
 
 ## Install
 
