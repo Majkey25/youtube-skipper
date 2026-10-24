@@ -1,0 +1,15 @@
+# Check twice weekly in UTC, with stable times per repository, ecosystem and directory.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: cron
+      cronjob: "52 23 * * 3,6"
+      timezone: Etc/UTC
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: cron
+      cronjob: "57 0 * * 2,5"
+      timezone: Etc/UTC
